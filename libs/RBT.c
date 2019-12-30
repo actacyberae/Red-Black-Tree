@@ -252,25 +252,37 @@ static void Get_minimal_node(RBTptr pRoot, RBTptr *pNodeBrother) {
 /*
 * 
 */
-static RBTptr get_node_by_key_in_subtree(RBTptr pNode, int pKey) {
-	if (pNode != NULL) {
-		if (pKey < pNode->key) {
-			return get_node_by_key_in_subtree(pNode->left, pKey);
-		} else if (pKey > pNode->key) {
-			return get_node_by_key_in_subtree(pNode->right, pKey);
-		} else {
-			return pNode;
-		}
-	} else {
-		return NULL;
+static int get_node(RBT *pRBT, int pKey, RBTptr *pNode) {
+	if (pRBT == NULL) {
+		return ER_EMPTYTREE;
 	}
+	*pNode = pRBT->root;
+	while (*pNode != NULL) {
+		if ((*pNode)->key > pKey) {
+			*pNode = (*pNode)->left;
+		} else if ((*pNode)->key < pKey) {
+			*pNode = (*pNode)->right;
+		} else if ((*pNode)->key == pKey) {
+			return TRUE;
+		} else {
+			break;
+		}
+	}
+	return ER_EMPTYNODE;
 }
 
-/*
-* 
-*/
-RBTptr get_node_by_key(RBT *pRBT, int pKey) {
-	return get_node_by_key_in_subtree(pRBT->root, pKey);
+void Get_node(RBT *pRBT, int pKey, RBTptr *pNode) {
+	int RETURN;
+	
+	RETURN = get_node(pRBT, pKey, pNode);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("get_node: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("get_node: ER_EMPTYNODE\n");
+			*pNode == NULL;
+	}
 }
 
 /*
@@ -656,7 +668,7 @@ static void declare_a_new_node(RBT *pRBT, RBTptr *pRoot, RBTptr *pNode, int pKey
 /*
 * 
 */
-static void stick_node_to_tree(RBT *pRBT, RBTptr *pRoot, RBTptr pNode, int pKey) {
+static void insert_node(RBT *pRBT, RBTptr *pRoot, RBTptr pNode, int pKey) {
 	RBTptr pParent;
 	
 	if (pNode == NULL) {
@@ -691,32 +703,32 @@ static void stick_node_to_tree(RBT *pRBT, RBTptr *pRoot, RBTptr pNode, int pKey)
 /*
  * 
  * */
-void insert_node_into_RBT(RBT *pRBT, int pKey) {
-	stick_node_to_tree(pRBT, &pRBT->root, pRBT->root, pKey);
+void Insert_node(RBT *pRBT, int pKey) {
+	insert_node(pRBT, &pRBT->root, pRBT->root, pKey);
 }
 
 /*
-* Рекурсивная функция free_node помещает выделенную память под узел де
+* Рекурсивная функция free_tree помещает выделенную память под узел де
 * рева в список повторно используемых областей. Указатель pNode может бы
 * ть равным NULL и проверка, используемая внутри функции указателя, испо
 * льзуется для  последовательное перемещения по поддереву с корнем в 
 * pRoot в порядке левого обхода.
 */
-static void free_node(RBTptr pRoot) {
+static void free_tree(RBTptr pRoot) {
 	if (pRoot != NULL) {
-		free_node(pRoot->left);
-		free_node(pRoot->right);
+		free_tree(pRoot->left);
+		free_tree(pRoot->right);
 		free(pRoot);
 	}
 }
 
 /*
-* Для очистки всего дерева pRBT используется функция delete_tree, которая за
-* действует рекурсивную функцию free_node, в качестве параметра которо
+* Для очистки всего дерева pRBT используется функция Free_tree, которая за
+* действует рекурсивную функцию free_tree, в качестве параметра которо
 * й передает корень дерева pRBT->root.
 */
-void delete_tree(RBT *pRBT) {
-	free_node(pRBT->root);
+void Free_tree(RBT *pRBT) {
+	free_tree(pRBT->root);
 }
 
 /*
@@ -833,20 +845,38 @@ static RBTptr case_C(RBT *pRBT, RBTptr *pDeletedNode) {
 	return pBalancingNode;
 }
 
-void delete_node(RBT *pRBT, RBTptr pNode) {
+static int free_node(RBT *pRBT, RBTptr pNode) {
 	int originColor;
 	RBTptr pBalancingNode;
 	
-	if (pNode != NULL) {
-		pRBT->size--;
-		if (pNode->right == NULL && pNode->left == NULL) {
-			pBalancingNode = case_A(pRBT, &pNode);
-		} else if (pNode->right == NULL || pNode->left == NULL) {
-			pBalancingNode = case_B(pRBT, &pNode);
-		} else {
-			pBalancingNode = case_C(pRBT, &pNode);
-		}
-		tree_adjustment(pRBT, pBalancingNode);
-		free(pNode);
+	if (pRBT == NULL) {
+		return ER_EMPTYTREE;
+	}
+	if (pNode == NULL) {
+		return ER_EMPTYNODE;
+	}
+	pRBT->size--;
+	if (pNode->right == NULL && pNode->left == NULL) {
+		pBalancingNode = case_A(pRBT, &pNode);
+	} else if (pNode->right == NULL || pNode->left == NULL) {
+		pBalancingNode = case_B(pRBT, &pNode);
+	} else {
+		pBalancingNode = case_C(pRBT, &pNode);
+	}
+	tree_adjustment(pRBT, pBalancingNode);
+	free(pNode);
+	return TRUE;
+}
+
+void Free_node(RBT *pRBT, RBTptr pNode) {
+	int RETURN;
+	
+	RETURN = free_node(pRBT, pNode);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("free_node: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("free_node: ER_EMPTYNODE\n");
 	}
 }

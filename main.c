@@ -6,75 +6,75 @@
 int main (int argc, char *argv[]) {
 	RBT pRBT = {0, NULL};
 	RBTptr pNode;
-	insert_node_into_RBT(&pRBT, 40);
-	insert_node_into_RBT(&pRBT, 30);
-	insert_node_into_RBT(&pRBT, 35);
-	insert_node_into_RBT(&pRBT, 34);
-	insert_node_into_RBT(&pRBT, 32);
-	insert_node_into_RBT(&pRBT, 25);
-	insert_node_into_RBT(&pRBT, 1);
-	insert_node_into_RBT(&pRBT, 27);
-	insert_node_into_RBT(&pRBT, 26);
-	insert_node_into_RBT(&pRBT, 28);
-	insert_node_into_RBT(&pRBT, 60);
-	insert_node_into_RBT(&pRBT, 50);
-	insert_node_into_RBT(&pRBT, 47);
-	insert_node_into_RBT(&pRBT, 55);
-	insert_node_into_RBT(&pRBT, 57);
-	insert_node_into_RBT(&pRBT, 52);
-	insert_node_into_RBT(&pRBT, 54);
-	insert_node_into_RBT(&pRBT, 53);
-	insert_node_into_RBT(&pRBT, 70);
-	insert_node_into_RBT(&pRBT, 65);
-	insert_node_into_RBT(&pRBT, 75);
+	Insert_node(&pRBT, 40);
+	Insert_node(&pRBT, 30);
+	Insert_node(&pRBT, 35);
+	Insert_node(&pRBT, 34);
+	Insert_node(&pRBT, 32);
+	Insert_node(&pRBT, 25);
+	Insert_node(&pRBT, 1);
+	Insert_node(&pRBT, 27);
+	Insert_node(&pRBT, 26);
+	Insert_node(&pRBT, 28);
+	Insert_node(&pRBT, 60);
+	Insert_node(&pRBT, 50);
+	Insert_node(&pRBT, 47);
+	Insert_node(&pRBT, 55);
+	Insert_node(&pRBT, 57);
+	Insert_node(&pRBT, 52);
+	Insert_node(&pRBT, 54);
+	Insert_node(&pRBT, 53);
+	Insert_node(&pRBT, 70);
+	Insert_node(&pRBT, 65);
+	Insert_node(&pRBT, 75);
 	tree_info(&pRBT);
 	
 	
 	print_line(STDOUT_FILENO, "========\n");
-	pNode = get_node_by_key(&pRBT, 25);
+	Get_node(&pRBT, 25, &pNode);
 	print_line(STDOUT_FILENO, "DELETE NODE: [%d]\n", pNode->key);
 	print_line(STDOUT_FILENO, "========\n");
-	delete_node(&pRBT, pNode);
+	Free_node(&pRBT, pNode);
 	tree_info(&pRBT);
 	
 	print_line(STDOUT_FILENO, "========\n");
-	pNode = get_node_by_key(&pRBT, 75);
+	Get_node(&pRBT, 75, &pNode);
 	print_line(STDOUT_FILENO, "DELETE NODE: [%d]\n", pNode->key);
 	print_line(STDOUT_FILENO, "========\n");
-	delete_node(&pRBT, pNode);
+	Free_node(&pRBT, pNode);
 	tree_info(&pRBT);
 	
 	print_line(STDOUT_FILENO, "========\n");
-	pNode = get_node_by_key(&pRBT, 34);
+	Get_node(&pRBT, 34, &pNode);
 	print_line(STDOUT_FILENO, "DELETE NODE: [%d]\n", pNode->key);
 	print_line(STDOUT_FILENO, "========\n");
-	delete_node(&pRBT, pNode);
+	Free_node(&pRBT, pNode);
 	tree_info(&pRBT);
 	
 	print_line(STDOUT_FILENO, "========\n");
-	pNode = get_node_by_key(&pRBT, 32);
+	Get_node(&pRBT, 32, &pNode);
 	print_line(STDOUT_FILENO, "DELETE NODE: [%d]\n", pNode->key);
 	print_line(STDOUT_FILENO, "========\n");
-	delete_node(&pRBT, pNode);
+	Free_node(&pRBT, pNode);
 	tree_info(&pRBT);
 	
 	print_line(STDOUT_FILENO, "========\n");
-	pNode = get_node_by_key(&pRBT, 1);
+	Get_node(&pRBT, 1, &pNode);
 	print_line(STDOUT_FILENO, "DELETE NODE: [%d]\n", pNode->key);
 	print_line(STDOUT_FILENO, "========\n");
-	delete_node(&pRBT, pNode);
+	Free_node(&pRBT, pNode);
 	tree_info(&pRBT);
 	
 	
 	print_line(STDOUT_FILENO, "========\n");
-	pNode = get_node_by_key(&pRBT, 33);
+	Get_node(&pRBT, 33, &pNode);
 	
 	print_line(STDOUT_FILENO, "========\n");
-	delete_node(&pRBT, pNode);
+	Free_node(&pRBT, pNode);
 	tree_info(&pRBT);
 	
 	print_line(STDOUT_FILENO, "Exit\n");
-	delete_tree(&pRBT);
+	Free_tree(&pRBT);
 	
 	return 0;
 }

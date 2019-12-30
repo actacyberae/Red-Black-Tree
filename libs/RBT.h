@@ -28,14 +28,14 @@ typedef struct RBT {
 	RBTptr root;
 } RBT;
 
-void insert_node_into_RBT(RBT *pRBT, int pKey);
+void Insert_node(RBT *pRBT, int pKey);
 
 void tree_info(RBT *pRBT);
 
-void delete_tree(RBT *pRBT);
+void Free_tree(RBT *pRBT);
 
-void delete_node(RBT *pRBT, RBTptr pNode);
+void Free_node(RBT *pRBT, RBTptr pNode);
 
-RBTptr get_node_by_key(RBT *pRBT, int pKey);
+void Get_node(RBT *pRBT, int pKey, RBTptr *pNode);
 
 #endif
