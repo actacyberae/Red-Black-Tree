@@ -846,7 +846,6 @@ static RBTptr case_C(RBT *pRBT, RBTptr *pDeletedNode) {
 }
 
 static int free_node(RBT *pRBT, RBTptr pNode) {
-	int originColor;
 	RBTptr pBalancingNode;
 	
 	if (pRBT == NULL) {
