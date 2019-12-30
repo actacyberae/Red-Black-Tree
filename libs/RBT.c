@@ -66,47 +66,17 @@ void tree_info(RBT *pRBT) {
 
 /*
 * Проверка цвета узла pNode. В случае, если узел красный, функция возвра
-* щает значение 1, а если узел - черный, то 0. Эта функция будет полезна
-* , когда мы будем обращаться к проверке цвета узла при удалении, либо д
-* обавлении вершины в красно-черное дерево. Если узел пустой NULL, то во
-* звращается значение 0. Это сделано из расчета, что пустой узел по-умол
-* чанию должен быть черным.
+* щает значение TRUE, а если узел - черный, то FALSE. Эта функция будет 
+* полезна, когда мы будем обращаться к проверке цвета узла при удалении,
+* либо добавлении вершины в красно-черное дерево. Если узел пустой NULL,
+* то возвращается значение FALSE. Это сделано из расчета, что пустой узе
+* л по-умолчанию должен быть черным.
 */
 static int is_node_red(RBTptr pNode) {
 	if (pNode == NULL) {
-		return 0;
+		return FALSE;
 	}
-	return (pNode->color == RED) ? 1 : 0;
-}
-
-/*
-* 
-*/
-static int node_color_change(RBT *pRBT, RBTptr *pNode) {
-	int isRed;
-	
-	if (pRBT == NULL) {
-		err_msg("> <?!>\n> Функция node_color_change\n> Дерево pRBT является пустым.\n");
-		return -1;
-	}
-	if (*pNode == NULL) {
-		err_msg("> <?!>\n> Функция node_color_change\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
-	}
-	if (*pNode != pRBT->root) {
-		if ((isRed = is_node_red(*pNode)) == -1) {
-			err_msg("> <?!>\n> node_color_change -> is_node_red\n> Проблемы обнаружены при обработке функции node_color_change, запускающей функцию is_node_red.\n");
-			return -1;
-		}
-		if (isRed == 1) {
-			(*pNode)->color = BLACK;
-		} else {
-			(*pNode)->color = RED;
-		}
-	} else {
-		(*pNode)->color = BLACK;
-	}
-	return 1;
+	return (pNode->color == RED) ? TRUE : FALSE;
 }
 
 /*
@@ -125,18 +95,16 @@ static int get_parent_of_node(RBT *pRBT, RBTptr pNode, RBTptr *pParent) {
 	int pKey;
 	
 	if (pRBT == NULL) {
-		err_msg("> <?!>\n> Функция get_parent_of_node\n> Дерево pRBT является пустым.\n");
-		return -1;
+		return ER_EMPTYTREE;
 	}
 	if (pNode == NULL) {
-		err_msg("> <?!>\n> Функция get_parent_of_node\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
+		return ER_EMPTYNODE;
 	}
 	pKey = pNode->key;
 	*pParent = pRBT->root;
 	while (*pParent != NULL) {
 		if ((*pParent)->right == pNode || (*pParent)->left == pNode) {
-			return 1;
+			return TRUE;
 		}
 		if ((*pParent)->key > pKey) {
 			*pParent = (*pParent)->left;
@@ -146,7 +114,21 @@ static int get_parent_of_node(RBT *pRBT, RBTptr pNode, RBTptr *pParent) {
 			break;
 		}
 	}
-	return 0;
+	return FALSE;
+}
+
+static void Get_parent_of_node(RBT *pRBT, RBTptr pNode, RBTptr *pParent) {
+	int RETURN;
+	
+	RETURN = get_parent_of_node(pRBT, pNode, pParent);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("get_parent_of_node: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("get_parent_of_node: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
+	}
 }
 
 /*
@@ -155,22 +137,32 @@ static int get_parent_of_node(RBT *pRBT, RBTptr pNode, RBTptr *pParent) {
 * кция возвращает отрицательное значение.
 */
 static int is_node_a_left_child(RBTptr pNode, RBTptr pParent) {
-	if (pNode == NULL) {
-		err_msg("> <?!>\n> Функция is_node_a_left_child\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
-	}
-	if (pParent == NULL) {
-		err_msg("> <?!>\n> Функция is_node_a_left_child\n> Указанный родитель pParent является пустым.\n");
-		return -1;
+	if (pNode == NULL || pParent == NULL) {
+		return ER_EMPTYNODE;
 	}
 	if (pParent->left == pNode) {
-		return 1;
+		return TRUE;
 	} else if (pParent->right == pNode) {
-		return 0;
+		return FALSE;
 	} else {
-		err_msg("> <?!>\n> Функция is_node_a_left_child\n> Вершина pParent с ключом [%d] не является родителем вершины pNode с ключом [%d].\n", pParent->key, pNode->key);
-		return -1;
+		return ER_UNKNWPRNT;
 	} 
+}
+
+static int Is_node_a_left_child(RBTptr pNode, RBTptr pParent) {
+	int RETURN;
+	
+	RETURN = is_node_a_left_child(pNode, pParent);
+	switch (RETURN) {
+		case ER_EMPTYNODE:
+			err_msg("is_node_a_left_child: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
+		case ER_UNKNWPRNT:
+			err_msg("is_node_a_left_child: ER_UNKNWPRNT\n");
+			exit(EXIT_FAILURE);
+		default:
+			return RETURN;
+	}
 }
 
 /*
@@ -187,26 +179,16 @@ static int is_node_a_left_child(RBTptr pNode, RBTptr pParent) {
 */
 static int get_sibling_node(RBT *pRBT, RBTptr pNode, RBTptr *pNodeBrother) {
 	RBTptr pParent;
-	int isNodeLeft;
 	
 	if (pRBT == NULL) {
-		err_msg("> <?!>\n> Функция get_sibling_node\n> Дерево pRBT является пустым.\n");
-		return -1;
+		return ER_EMPTYTREE;
 	}
 	if (pNode == NULL) {
-		err_msg("> <?!>\n> Функция get_sibling_node\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
+		return ER_EMPTYNODE;
 	}
 	if (pRBT->root != pNode) {
-		if (get_parent_of_node(pRBT, pNode, &pParent) == -1) {
-			err_msg("> <?!>\n> get_sibling_node -> get_parent_of_node\n> Проблемы обнаружены при обработке функции get_sibling_node, запускающей функцию get_parent_of_node.\n");
-			return -1;
-		}
-		if ((isNodeLeft = is_node_a_left_child(pNode, pParent)) == -1) {
-			err_msg("> <?!>\n> get_sibling_node -> is_node_a_left_child\n> Проблемы обнаружены при обработке функции get_sibling_node, запускающей функцию is_node_a_left_child.\n");
-			return -1;
-		}
-		if (isNodeLeft == 1) {
+		Get_parent_of_node(pRBT, pNode, &pParent);
+		if (Is_node_a_left_child(pNode, pParent) == TRUE) {
 			*pNodeBrother = pParent->right;
 		} else {
 			*pNodeBrother = pParent->left;
@@ -214,7 +196,81 @@ static int get_sibling_node(RBT *pRBT, RBTptr pNode, RBTptr *pNodeBrother) {
 	} else {
 		*pNodeBrother = NULL;
 	}
-	return 1;
+	return TRUE;
+}
+
+static void Get_sibling_node(RBT *pRBT, RBTptr pNode, RBTptr *pNodeBrother) {
+	int RETURN;
+	
+	RETURN = get_sibling_node(pRBT, pNode, pNodeBrother);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("get_sibling_node: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("get_sibling_node: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
+	}
+}
+
+/*
+* Функция возвращает вершину с минимальным ключом в поддереве с корнем в
+* A. Архитектура дерева такова, что минимальная вершина всегда будет леж
+* ать слева от корня. Для дерева приведенного ниже, такой вершиной будет
+* узел B.
+*      |
+*      A
+*     / \
+*    /   \
+*   B     C
+*/
+static int get_minimal_node(RBTptr pRoot, RBTptr *pMinimalNode) {
+	if (pRoot == NULL) {
+		return ER_EMPTYNODE;
+	}
+	*pMinimalNode = pRoot;
+	while (*pMinimalNode != NULL) {
+		if ((*pMinimalNode)->left == NULL) {
+			return TRUE;
+		}
+		*pMinimalNode = (*pMinimalNode)->left;
+	}
+	return ER_EMPTYNODE;
+}
+
+static void Get_minimal_node(RBTptr pRoot, RBTptr *pNodeBrother) {
+	int RETURN;
+	
+	RETURN = get_minimal_node(pRoot, pNodeBrother);
+	switch (RETURN) {
+		case ER_EMPTYNODE:
+			err_msg("get_sibling_node: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
+	}
+}
+
+/*
+* 
+*/
+static RBTptr get_node_by_key_in_subtree(RBTptr pNode, int pKey) {
+	if (pNode != NULL) {
+		if (pKey < pNode->key) {
+			return get_node_by_key_in_subtree(pNode->left, pKey);
+		} else if (pKey > pNode->key) {
+			return get_node_by_key_in_subtree(pNode->right, pKey);
+		} else {
+			return pNode;
+		}
+	} else {
+		return NULL;
+	}
+}
+
+/*
+* 
+*/
+RBTptr get_node_by_key(RBT *pRBT, int pKey) {
+	return get_node_by_key_in_subtree(pRBT->root, pKey);
 }
 
 /*
@@ -225,26 +281,16 @@ static int get_sibling_node(RBT *pRBT, RBTptr pNode, RBTptr *pNodeBrother) {
 */
 static int transplant(RBT *pRBT, RBTptr pNode, RBTptr pNewNode) {
 	RBTptr pParent;
-	int isNodeLeft;
 	
 	if (pRBT == NULL) {
-		err_msg("> <?!>\n> Функция transplant\n> Дерево pRBT является пустым.\n");
-		return -1;
+		return ER_EMPTYTREE;
 	}
 	if (pNode == NULL) {
-		err_msg("> <?!>\n> Функция transplant\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
+		return ER_EMPTYNODE;
 	}
 	if (pRBT->root != pNode) {
-		if (get_parent_of_node(pRBT, pNode, &pParent) == -1) {
-			err_msg("> <?!>\n> transplant -> get_parent_of_node\n> Проблемы обнаружены при обработке функции transplant, запускающей функцию get_parent_of_node.\n");
-			return -1;
-		}
-		if ((isNodeLeft = is_node_a_left_child(pNode, pParent)) == -1) {
-			err_msg("> <?!>\n> transplant -> is_node_a_left_child\n> Проблемы обнаружены при обработке функции transplant, запускающей функцию is_node_a_left_child.\n");
-			return -1;
-		}
-		if (isNodeLeft == 1) {
+		Get_parent_of_node(pRBT, pNode, &pParent);
+		if (Is_node_a_left_child(pNode, pParent) == TRUE) {
 			pParent->left = pNewNode;
 		} else {
 			pParent->right = pNewNode;
@@ -252,7 +298,21 @@ static int transplant(RBT *pRBT, RBTptr pNode, RBTptr pNewNode) {
 	} else {
 		pRBT->root = pNewNode;
 	}
-	return 1;
+	return TRUE;
+}
+
+static void Transplant(RBT *pRBT, RBTptr pNode, RBTptr pNewNode) {
+	int RETURN;
+	
+	RETURN = transplant(pRBT, pNode, pNewNode);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("transplant: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("transplant: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
+	}
 }
 
 /*
@@ -277,52 +337,45 @@ static int transplant(RBT *pRBT, RBTptr pNode, RBTptr pNewNode) {
 *   b1   b2   c1   c2                                                   
 */
 static int is_node_external(RBT *pRBT, RBTptr pNode) {
-	int isLeftChild;
-	int isNodeALeftChild;
 	RBTptr pParent;
 	RBTptr pGrandParent;
 	
 	if (pRBT == NULL) {
-		err_msg("> <?!>\n> Функция is_node_external\n> Дерево pRBT является пустым.\n");
-		return -1;
+		return ER_EMPTYTREE;
 	}
 	if (pNode == NULL) {
-		err_msg("> <?!>\n> Функция is_node_external\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
+		return ER_EMPTYNODE;
 	}
-	if (get_parent_of_node(pRBT, pNode, &pParent) == -1) {
-		err_msg("> <?!>\n> is_node_external -> get_parent_of_node\n> Проблемы обнаружены при обработке функции is_node_external, запускающей функцию get_parent_of_node.\n");
-		return -1;
-	}
-	if (get_parent_of_node(pRBT, pParent, &pGrandParent) == -1) {
-		err_msg("> <?!>\n> is_node_external -> get_parent_of_node\n> Проблемы обнаружены при обработке функции is_node_external, запускающей функцию get_parent_of_node.\n");
-		return -1;
-	}
-	if ((isLeftChild = is_node_a_left_child(pParent, pGrandParent)) == -1) {
-		err_msg("> <?!>\n> is_node_external -> is_node_a_left_child\n> Проблемы обнаружены при обработке функции is_node_external, запускающей функцию is_node_a_left_child.\n");
-		return -1;
-	}
-	if (isLeftChild == 1) {
-		if ((isLeftChild = is_node_a_left_child(pNode, pParent)) == -1) {
-			err_msg("> <?!>\n> is_node_external -> is_node_a_left_child\n> Проблемы обнаружены при обработке функции is_node_external, запускающей функцию is_node_a_left_child.\n");
-			return -1;
-		}
-		if (isLeftChild == 1) {
-			return 1;
+	Get_parent_of_node(pRBT, pNode, &pParent);
+	Get_parent_of_node(pRBT, pParent, &pGrandParent);
+	if (Is_node_a_left_child(pParent, pGrandParent) == TRUE) {
+		if (Is_node_a_left_child(pNode, pParent) == TRUE) {
+			return TRUE;
 		} else {
-			return 0;
+			return FALSE;
 		}
-		
 	} else {
-		if ((isLeftChild = is_node_a_left_child(pNode, pParent)) == -1) {
-			err_msg("> <?!>\n> is_node_external -> is_node_a_left_child\n> Проблемы обнаружены при обработке функции is_node_external, запускающей функцию is_node_a_left_child.\n");
-			return -1;
-		}
-		if (isLeftChild == 1) {
-			return 0;
+		if (Is_node_a_left_child(pNode, pParent) == TRUE) {
+			return FALSE;
 		} else {
-			return 1;
+			return TRUE;
 		}
+	}
+}
+
+static int Is_node_external(RBT *pRBT, RBTptr pNode) {
+	int RETURN;
+	
+	RETURN = is_node_external(pRBT, pNode);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("is_node_external: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("is_node_external: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
+		default:
+			return RETURN;
 	}
 }
 
@@ -341,25 +394,34 @@ static int left_turn(RBT *pRBT, RBTptr *pNode) {
 	RBTptr pNewNode;
 	
 	if (pRBT == NULL) {
-		err_msg("> <?!>\n> Функция left_turn\n> Дерево pRBT является пустым.\n");
-		return -1;
+		return ER_EMPTYTREE;
 	}
 	if (pNode == NULL) {
-		err_msg("> <?!>\n> Функция left_turn\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
+		return ER_EMPTYNODE;
 	}
 	pNewNode = (*pNode)->right;
 	(*pNode)->right = pNewNode->left;
 	pNewNode->left = *pNode;
 	if (*pNode != pRBT->root) {
-		if (transplant(pRBT, *pNode, pNewNode) == -1) {
-			err_msg("> <?!>\n> left_turn -> transplant\n> Проблемы обнаружены при обработке функции left_turn, запускающей функцию transplant.\n");
-			return -1;
-		}
+		Transplant(pRBT, *pNode, pNewNode);
 	} else {
 		pRBT->root = pNewNode;
 	}
-	return 1;
+	return TRUE;
+}
+
+static void Left_turn(RBT *pRBT, RBTptr *pNode) {
+	int RETURN;
+	
+	RETURN = left_turn(pRBT, pNode);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("left_turn: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("left_turn: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
+	}
 }
 
 /*
@@ -377,25 +439,34 @@ static int right_turn(RBT *pRBT, RBTptr *pNode) {
 	RBTptr pNewNode;
 	
 	if (pRBT == NULL) {
-		err_msg("> <?!>\n> Функция right_turn\n> Дерево pRBT является пустым.\n");
-		return -1;
+		return ER_EMPTYTREE;
 	}
 	if (*pNode == NULL) {
-		err_msg("> <?!>\n> Функция right_turn\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
+		return ER_EMPTYNODE;
 	}
 	pNewNode = (*pNode)->left;
 	(*pNode)->left = pNewNode->right;
 	pNewNode->right = *pNode;
 	if (*pNode != pRBT->root) {
-		if (transplant(pRBT, *pNode, pNewNode) == -1) {
-			err_msg("> <?!>\n> right_turn -> transplant\n> Проблемы обнаружены при обработке функции right_turn, запускающей функцию transplant.\n");
-			return -1;
-		}
+		Transplant(pRBT, *pNode, pNewNode);
 	} else {
 		pRBT->root = pNewNode;
 	}
-	return 1;
+	return TRUE;
+}
+
+static void Right_turn(RBT *pRBT, RBTptr *pNode) {
+	int RETURN;
+	
+	RETURN = right_turn(pRBT, pNode);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("right_turn: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("right_turn: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
+	}
 }
 
 /*
@@ -416,22 +487,28 @@ static int right_turn(RBT *pRBT, RBTptr *pNode) {
 */
 static int left_long_turn(RBT *pRBT, RBTptr *pNode) {
 	if (pRBT == NULL) {
-		err_msg("> <?!>\n> Функция left_long_turn\n> Дерево pRBT является пустым.\n");
-		return -1;
+		return ER_EMPTYTREE;
 	}
 	if (*pNode == NULL) {
-		err_msg("> <?!>\n> Функция left_long_turn\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
+		return ER_EMPTYNODE;
 	}
-	if (right_turn(pRBT, &((*pNode)->right)) == -1) {
-		err_msg("> <?!>\n> left_long_turn -> right_turn\n> Проблемы обнаружены при обработке функции left_long_turn, запускающей функцию right_turn.\n");
-		return -1;
+	Right_turn(pRBT, &((*pNode)->right));
+	Left_turn(pRBT, pNode);
+	return TRUE;
+}
+
+static void Left_long_turn(RBT *pRBT, RBTptr *pNode) {
+	int RETURN;
+	
+	RETURN = left_long_turn(pRBT, pNode);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("left_long_turn: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("left_long_turn: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
 	}
-	if (left_turn(pRBT, pNode) == -1) {
-		err_msg("> <?!>\n> left_long_turn -> left_turn\n> Проблемы обнаружены при обработке функции left_long_turn, запускающей функцию left_turn.\n");
-		return -1;
-	}
-	return 1;
 }
 
 /*
@@ -452,29 +529,73 @@ static int left_long_turn(RBT *pRBT, RBTptr *pNode) {
 */
 static int right_long_turn(RBT *pRBT, RBTptr *pNode) {
 	if (pRBT == NULL) {
-		err_msg("> <?!>\n> Функция right_long_turn\n> Дерево pRBT является пустым.\n");
-		return -1;
+		return ER_EMPTYTREE;
 	}
 	if (*pNode == NULL) {
-		err_msg("> <?!>\n> Функция right_long_turn\n> Проверяемая вершина pNode является пустой.\n");
-		return -1;
+		return ER_EMPTYNODE;
 	}
-	if (left_turn(pRBT, &((*pNode)->left)) == -1) {
-		err_msg("> <?!>\n> right_long_turn -> left_turn\n> Проблемы обнаружены при обработке функции right_long_turn, запускающей функцию left_turn.\n");
-		return -1;
+	Left_turn(pRBT, &((*pNode)->left));
+	Right_turn(pRBT, pNode);
+	return TRUE;
+}
+
+static void Right_long_turn(RBT *pRBT, RBTptr *pNode) {
+	int RETURN;
+	
+	RETURN = right_long_turn(pRBT, pNode);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("right_long_turn: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("right_long_turn: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
 	}
-	if (right_turn(pRBT, pNode) == -1) {
-		err_msg("> <?!>\n> right_long_turn -> right_turn\n> Проблемы обнаружены при обработке функции right_long_turn, запускающей функцию right_turn.\n");
-		return -1;
+}
+
+/*
+* Функция смены цвета узла.
+*/
+static int node_color_change(RBT *pRBT, RBTptr *pNode) {
+	if (pRBT == NULL) {
+		return ER_EMPTYTREE;
 	}
-	return 1;
+	if (*pNode == NULL) {
+		return ER_EMPTYNODE;
+	}
+	if (*pNode != pRBT->root) {
+		if (is_node_red(*pNode) == TRUE) {
+			(*pNode)->color = BLACK;
+		} else {
+			(*pNode)->color = RED;
+		}
+	} else {
+		(*pNode)->color = BLACK;
+	}
+	return TRUE;
+}
+
+static int Node_color_change(RBT *pRBT, RBTptr *pNode) {
+	int RETURN;
+	
+	RETURN = node_color_change(pRBT, pNode);
+	switch (RETURN) {
+		case ER_EMPTYTREE:
+			err_msg("node_color_change: ER_EMPTYTREE\n");
+			exit(EXIT_FAILURE);
+		case ER_EMPTYNODE:
+			err_msg("node_color_change: ER_EMPTYNODE\n");
+			exit(EXIT_FAILURE);
+		default:
+			return RETURN;
+	}
 }
 
 /*
 * Каждый раз добавляя узел в дерево, требуется проводить балансировку в 
 * согласии с цветом соседних добавляемому узлу вершин. Существует три сл
 * учая, требующих отдельного описания:
-* 1. Когда брат родителя красный: выполняется простая перекраска родител
+* TRUE. Когда брат родителя красный: выполняется простая перекраска родител
 * я и его брата в черный цвет, а родителя родителя, если тот не является
 * корнем дерева, в красный цвет.
 * 2. Когда брат родителя черный: в зависимости от расположения добавляем
@@ -487,42 +608,38 @@ static int tree_balancing(RBT *pRBT, RBTptr pNode, RBTptr pParent) {
 	RBTptr pGrandParent;
 	RBTptr pUncle;
 	
-	while (is_node_red(pParent) == 1) {
-		if (get_parent_of_node(pRBT, pParent, &pGrandParent) == -1) {
-			return -1;
-		}
-		if (get_sibling_node(pRBT, pParent, &pUncle) == -1) {
-			return -1;
-		}
-		if (is_node_red(pGrandParent) == 0) {
-			if (is_node_red(pUncle) == 1) {
+	while (is_node_red(pParent) == TRUE) {
+		Get_parent_of_node(pRBT, pParent, &pGrandParent);
+		Get_sibling_node(pRBT, pParent, &pUncle);
+		if (is_node_red(pGrandParent) == FALSE) {
+			if (is_node_red(pUncle) == TRUE) {
 				pParent->color = pUncle->color = BLACK;
 				if (pGrandParent != pRBT->root) {
 					pGrandParent->color = RED;
 				}
 			} else {
-				if (is_node_external(pRBT, pNode) == 1) {
-					if (is_node_a_left_child(pParent, pGrandParent)) {
-						right_turn(pRBT, &pGrandParent);
+				if (is_node_external(pRBT, pNode) == TRUE) {
+					if (Is_node_a_left_child(pParent, pGrandParent) == TRUE) {
+						Right_turn(pRBT, &pGrandParent);
 					} else {
-						left_turn(pRBT, &pGrandParent);
+						Left_turn(pRBT, &pGrandParent);
 					}
-					node_color_change(pRBT, &pParent);
+					Node_color_change(pRBT, &pParent);
 				} else {
-					if (is_node_a_left_child(pParent, pGrandParent)) {
-						right_long_turn(pRBT, &pGrandParent);
+					if (Is_node_a_left_child(pParent, pGrandParent) == TRUE) {
+						Right_long_turn(pRBT, &pGrandParent);
 					} else {
-						left_long_turn(pRBT, &pGrandParent);
+						Left_long_turn(pRBT, &pGrandParent);
 					}
-					node_color_change(pRBT, &pNode);
+					Node_color_change(pRBT, &pNode);
 				}
-				node_color_change(pRBT, &pGrandParent);
+				Node_color_change(pRBT, &pGrandParent);
 			}
 			pNode = pGrandParent;
-			get_parent_of_node(pRBT, pNode, &pParent);
+			Get_parent_of_node(pRBT, pNode, &pParent);
 		}
 	}
-	return 1;
+	return TRUE;
 }
 
 /*
@@ -546,7 +663,7 @@ static void stick_node_to_tree(RBT *pRBT, RBTptr *pRoot, RBTptr pNode, int pKey)
 		declare_a_new_node(pRBT, pRoot, &pNode, pKey);
 		pNode->color = BLACK;
 	} else {
-		while (1) {
+		while (TRUE) {
 			if (pKey < pNode->key) {
 				if (pNode->left == NULL) {
 					pParent = pNode;
@@ -605,79 +722,57 @@ void delete_tree(RBT *pRBT) {
 /*
 * 
 */
-static RBTptr get_minimal_node_in_subtree(RBTptr pNode) {
-	if (pNode != NULL) {
-		if (pNode->left != NULL) {
-			return get_minimal_node_in_subtree(pNode->left);
-		} else {
-			return pNode;
-		}
-	} else {
-		return NULL;
-	}
-}
-
-/*
-* 
-*/
-static RBTptr get_minimal_node(RBT *pRBT) {
-	return get_minimal_node_in_subtree(pRBT->root);
-}
-
-/*
-* 
-*/
 static void tree_adjustment(RBT *pRBT, RBTptr pBalancingNode) {
 	RBTptr pParent;
 	RBTptr pSafePositionNode;
 	
 	if (pBalancingNode != NULL) {
-		get_parent_of_node(pRBT, pBalancingNode, &pParent);
-		pSafePositionNode = (is_node_a_left_child(pBalancingNode, pParent) == 1) ? pParent->right : pParent->left;
+		Get_parent_of_node(pRBT, pBalancingNode, &pParent);
+		pSafePositionNode = (Is_node_a_left_child(pBalancingNode, pParent) == TRUE) ? pParent->right : pParent->left;
 		while (pSafePositionNode != pRBT->root && !is_node_red(pSafePositionNode)) {
-			if (!is_node_a_left_child(pBalancingNode, pParent)) {
-				if (is_node_red(pBalancingNode)) {
+			if (Is_node_a_left_child(pBalancingNode, pParent) == TRUE) {
+				if (is_node_red(pBalancingNode) == TRUE) {
 					pBalancingNode->color = BLACK;
 					pParent->color = RED;
-					left_turn(pRBT, &pParent);
-					pBalancingNode = pParent->right;
+					Right_turn(pRBT, &pParent);
+					pBalancingNode = pParent->left;
 				} else {
-					if (!is_node_red(pBalancingNode->left) && !is_node_red(pBalancingNode->right)) {
+					if ((is_node_red(pBalancingNode->left) == FALSE) && (is_node_red(pBalancingNode->right) == FALSE)) {
 						pBalancingNode->color = RED;
 						pSafePositionNode = pParent;
-					} else if (is_node_red(pBalancingNode->left) && !is_node_red(pBalancingNode->right)) {
-						(pBalancingNode->left)->color = BLACK;
+					} else if ((is_node_red(pBalancingNode->left) == FALSE) && (is_node_red(pBalancingNode->right) == TRUE)) {
+						(pBalancingNode->right)->color = BLACK;
 						pBalancingNode->color = RED;
-						right_turn(pRBT, &pBalancingNode);
-						pBalancingNode = pParent->right;
-					} else if (!is_node_red(pBalancingNode->left) && is_node_red(pBalancingNode->right)) {
+						Left_turn(pRBT, &pBalancingNode);
+						pBalancingNode = pParent->left;
+					} else if ((is_node_red(pBalancingNode->left) == TRUE) && (is_node_red(pBalancingNode->right) == FALSE)) {
 						pBalancingNode->color = pParent->color;
 						pParent->color = BLACK;
-						(pBalancingNode->right)->color = BLACK;
-						left_turn(pRBT, &pParent);
+						(pBalancingNode->left)->color = BLACK;
+						Right_turn(pRBT, &pParent);
 						pSafePositionNode = pRBT->root;
 					}
 				}
 			} else {
-				if (is_node_red(pBalancingNode)) {
+				if (is_node_red(pBalancingNode) == TRUE) {
 					pBalancingNode->color = BLACK;
 					pParent->color = RED;
-					right_turn(pRBT, &pParent);
-					pBalancingNode = pParent->left;
+					Left_turn(pRBT, &pParent);
+					pBalancingNode = pParent->right;
 				} else {
-					if (!is_node_red(pBalancingNode->left) && !is_node_red(pBalancingNode->right)) {
+					if ((is_node_red(pBalancingNode->left) == FALSE) && (is_node_red(pBalancingNode->right) == FALSE)) {
 						pBalancingNode->color = RED;
 						pSafePositionNode = pParent;
-					} else if (!is_node_red(pBalancingNode->left) && is_node_red(pBalancingNode->right)) {
-						(pBalancingNode->right)->color = BLACK;
+					} else if ((is_node_red(pBalancingNode->left) == TRUE) && (is_node_red(pBalancingNode->right) == FALSE)) {
+						(pBalancingNode->left)->color = BLACK;
 						pBalancingNode->color = RED;
-						left_turn(pRBT, &pBalancingNode);
-						pBalancingNode = pParent->left;
-					} else if (is_node_red(pBalancingNode->left) && !is_node_red(pBalancingNode->right)) {
+						Right_turn(pRBT, &pBalancingNode);
+						pBalancingNode = pParent->right;
+					} else if ((is_node_red(pBalancingNode->left) == FALSE) && (is_node_red(pBalancingNode->right) == TRUE)) {
 						pBalancingNode->color = pParent->color;
 						pParent->color = BLACK;
-						(pBalancingNode->left)->color = BLACK;
-						right_turn(pRBT, &pParent);
+						(pBalancingNode->right)->color = BLACK;
+						Left_turn(pRBT, &pParent);
 						pSafePositionNode = pRBT->root;
 					}
 				}
@@ -693,8 +788,8 @@ static void tree_adjustment(RBT *pRBT, RBTptr pBalancingNode) {
 static RBTptr case_A(RBT *pRBT, RBTptr *pDeletedNode) {
 	RBTptr pBalancingNode;
 	
-	get_sibling_node(pRBT, *pDeletedNode, &pBalancingNode);
-	transplant(pRBT, *pDeletedNode, NULL);
+	Get_sibling_node(pRBT, *pDeletedNode, &pBalancingNode);
+	Transplant(pRBT, *pDeletedNode, NULL);
 	return pBalancingNode;
 }
 
@@ -705,13 +800,13 @@ static RBTptr case_B(RBT *pRBT, RBTptr *pDeletedNode) {
 	RBTptr pNewNode;
 	RBTptr pBalancingNode;
 	
-	get_sibling_node(pRBT, *pDeletedNode, &pBalancingNode);
+	Get_sibling_node(pRBT, *pDeletedNode, &pBalancingNode);
 	if ((*pDeletedNode)->left != NULL) {
 		pNewNode = (*pDeletedNode)->left;
 	} else {
 		pNewNode = (*pDeletedNode)->right;
 	}
-	transplant(pRBT, *pDeletedNode, pNewNode);
+	Transplant(pRBT, *pDeletedNode, pNewNode);
 	return pBalancingNode;
 }
 
@@ -723,9 +818,9 @@ static RBTptr case_C(RBT *pRBT, RBTptr *pDeletedNode) {
 	RBTptr pParentOfMinimalNodeFromRightSubtreeOfDeletedNode;
 	RBTptr pBalancingNode;
 	
-	pMinimalNodeFromRightSubtreeOfDeletedNode = get_minimal_node_in_subtree((*pDeletedNode)->right);
-	get_parent_of_node(pRBT, pMinimalNodeFromRightSubtreeOfDeletedNode, &pParentOfMinimalNodeFromRightSubtreeOfDeletedNode);
-	get_sibling_node(pRBT, pMinimalNodeFromRightSubtreeOfDeletedNode, &pBalancingNode);
+	Get_minimal_node((*pDeletedNode)->right, &pMinimalNodeFromRightSubtreeOfDeletedNode);
+	Get_parent_of_node(pRBT, pMinimalNodeFromRightSubtreeOfDeletedNode, &pParentOfMinimalNodeFromRightSubtreeOfDeletedNode);
+	Get_sibling_node(pRBT, pMinimalNodeFromRightSubtreeOfDeletedNode, &pBalancingNode);
 	
 	if (pParentOfMinimalNodeFromRightSubtreeOfDeletedNode != *pDeletedNode) {
 		pParentOfMinimalNodeFromRightSubtreeOfDeletedNode->left = pMinimalNodeFromRightSubtreeOfDeletedNode->right;
@@ -734,7 +829,7 @@ static RBTptr case_C(RBT *pRBT, RBTptr *pDeletedNode) {
 		pMinimalNodeFromRightSubtreeOfDeletedNode->right = (*pDeletedNode)->right;
 	}
 	pMinimalNodeFromRightSubtreeOfDeletedNode->left = (*pDeletedNode)->left;
-	transplant(pRBT, *pDeletedNode, pMinimalNodeFromRightSubtreeOfDeletedNode);
+	Transplant(pRBT, *pDeletedNode, pMinimalNodeFromRightSubtreeOfDeletedNode);
 	return pBalancingNode;
 }
 
@@ -754,28 +849,4 @@ void delete_node(RBT *pRBT, RBTptr pNode) {
 		tree_adjustment(pRBT, pBalancingNode);
 		free(pNode);
 	}
-}
-
-/*
-* 
-*/
-static RBTptr get_node_by_key_in_subtree(RBTptr pNode, int pKey) {
-	if (pNode != NULL) {
-		if (pKey < pNode->key) {
-			return get_node_by_key_in_subtree(pNode->left, pKey);
-		} else if (pKey > pNode->key) {
-			return get_node_by_key_in_subtree(pNode->right, pKey);
-		} else {
-			return pNode;
-		}
-	} else {
-		return NULL;
-	}
-}
-
-/*
-* 
-*/
-RBTptr get_node_by_key(RBT *pRBT, int pKey) {
-	return get_node_by_key_in_subtree(pRBT->root, pKey);
 }

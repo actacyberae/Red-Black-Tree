@@ -6,6 +6,13 @@
 #define BLACK 0
 #define RED 1
 
+#define ER_EMPTYTREE -1
+#define ER_EMPTYNODE -2
+#define ER_UNKNWPRNT -3
+
+#define TRUE 1
+#define FALSE 0
+
 typedef struct node *RBTptr;
 
 typedef unsigned char tColor;
